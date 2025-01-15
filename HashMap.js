@@ -2,14 +2,22 @@ const Twister = require("./mersenne-twister.js");
 const bigintCryptoUtils = require("bigint-crypto-utils");
 const { LinkedList } = require("./linkedlist.js");
 
+class KVPair {
+    constructor(key, value) {
+        this.key = key;
+        this.value = value;
+    }
+}
+
 class HashMap {
     // The largest prime number less than 2^44
     static MAX_CAPACITY = 17592186044399;
 
     #capacity = 16;
     #loadFactor = 0.75;
-    #buckets;
-    #size;
+    #keys = [];
+    #buckets = [];
+    #size = 0;
 
     static hash(key) {
         /*
@@ -51,11 +59,11 @@ class HashMap {
 
         this.#capacity = capacity;
         this.#loadFactor = loadFactor;
-        this.#buckets = [];
-        this.#size = 0;
 
         for (let i = 0; i < capacity; i++) {
-            this.#buckets.push(new LinkedList());
+            const ll = new LinkedList();
+            ll.append([]);
+            this.#buckets.push(ll);
         }
     }
 
@@ -66,31 +74,123 @@ class HashMap {
         return i;
     }
 
+    #resize() {
+        // Doubles the capacity and number of buckets
+        const newNodes = this.#capacity;
+        for (let i = 0; i < newNodes; i++) {
+            const ll = new LinkedList();
+            ll.append([]);
+            this.#buckets.push(ll);
+        }
+        this.#capacity *= 2;
+    }
+
     set(key, value) {
         const i = this.#keyToIndex(key);
         const ll = this.#buckets[i];
+        const keys = ll.head().value;
 
-        ll.append(value);
+        const keyIdx = keys.findIndex((k) => {
+            return k === key;
+        });
 
+        if (keyIdx !== -1) {
+            const llIdx = keyIdx + 1;
+            const node = ll.at(llIdx);
+            node.value = value;
+        } else {
+            keys.push(key);
+            ll.append(value);
+            this.#size++;
+        }
+
+        // Resize buckets
         const shouldGrow = this.#size >= this.#loadFactor * this.#capacity;
         if (shouldGrow) {
-            const newNodes = this.#capacity;
-            for (let i = 0; i < newNodes; i++) {
-                this.#buckets.push(new LinkedList());
-            }
-            this.#capacity *= 2;
+            this.#resize();
         }
     }
 
     get(key) {
         const i = this.#keyToIndex(key);
         const ll = this.#buckets[i];
+        const keys = ll.head().value;
 
-        if (ll.size() === 0) {
-            return null;
+        const keyIdx = keys.findIndex((k) => {
+            return k === key;
+        });
+
+        if (keyIdx !== -1) {
+            const llIdx = keyIdx + 1;
+            const node = ll.at(llIdx);
+            return node.value;
         }
 
-        return ll.tail().value;
+        return null;
+    }
+
+    has(key) {
+        const i = this.#keyToIndex(key);
+        const ll = this.#buckets[i];
+        const keys = ll.head().value;
+
+        return keys.includes(key);
+    }
+
+    remove(key) {
+        const i = this.#keyToIndex(key);
+        const ll = this.#buckets[i];
+        const keys = ll.head().value;
+
+        const keyIdx = keys.findIndex((k) => {
+            return k === key;
+        });
+
+        if (keyIdx === -1) {
+            return false;
+        }
+
+        const llIdx = keyIdx + 1;
+        keys.splice(keyIdx, 1);
+        ll.removeAt(llIdx);
+        this.#size--;
+        return true;
+    }
+
+    length() {
+        return this.#size;
+    }
+
+    clear() {
+        for (let i = 0; i < capacity; i++) {
+            const ll = new LinkedList();
+            ll.append([]);
+            this.#buckets[i] = ll;
+        }
+    }
+
+    keys() {
+        const allKeys = [];
+        for (let i = 0; i < this.#capacity; i++) {
+            const currentKeys = this.#buckets[i].head().value;
+            allKeys.push(...currentKeys);
+        }
+        return allKeys;
+    }
+
+    values() {
+        const allValues = [];
+        for (let i = 0; i < this.#capacity; i++) {
+            if (this.#buckets[i].size() > 1) {
+                let node = this.#buckets[i].at(1);
+                while (node !== null) {
+                    allValues.push(node.value);
+                    node = node.nextNode;
+                }
+            }
+        }
+
+        return allValues;
     }
 }
 
