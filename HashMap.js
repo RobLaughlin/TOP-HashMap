@@ -1,15 +1,15 @@
 const Twister = require("./mersenne-twister.js");
 const bigintCryptoUtils = require("bigint-crypto-utils");
+const { LinkedList } = require("./linkedlist.js");
 
 class HashMap {
-    // Largest prime number less than 2^51
-    static MAX_CAPACITY = 2251799813685119;
-
-    // Largest prime number less than 2^25
-    static PRIME = 33554393;
+    // The largest prime number less than 2^44
+    static MAX_CAPACITY = 17592186044399;
 
     #capacity = 16;
     #loadFactor = 0.75;
+    #buckets;
+    #size;
 
     static hash(key) {
         /*
@@ -20,32 +20,26 @@ class HashMap {
             which will serve as our hash.
         */
 
-        let hashCode = BigInt(1);
-        for (let i = 0; i < key.length - 1; i++) {
+        const p = 251; // The largest prime number less than 2^8
+
+        let hashCode = 0;
+        for (let i = 0; i < key.length; i++) {
+            /**
+             * Since p < 2^8, h < 2^44, and c < 2^16
+             * ph + c < 2^53-1, resulting in no integer overflows.
+             */
             const c = key.charCodeAt(i);
-            hashCode *= bigintCryptoUtils.modPow(
-                BigInt(c),
-                BigInt(i + 1),
-                BigInt(HashMap.PRIME)
-            );
-            hashCode = hashCode % BigInt(HashMap.PRIME);
+            hashCode = p * hashCode + c;
+            hashCode %= this.MAX_CAPACITY;
         }
 
-        hashCode *= bigintCryptoUtils.modPow(
-            BigInt(key.charCodeAt(key.length - 1)),
-            BigInt(key.length),
-            BigInt(HashMap.MAX_CAPACITY)
-        );
-
-        const seed = Number(hashCode);
-        const t = new Twister(seed);
-        return Math.floor(t.random() * HashMap.MAX_CAPACITY);
+        return hashCode;
     }
 
     constructor(capacity = 16, loadFactor = 0.75) {
-        if (capacity > MAX_CAPACITY) {
+        if (capacity > HashMap.MAX_CAPACITY) {
             throw new RangeError(
-                `Cannot have a capacity greater than ${MAX_CAPACITY}.`
+                `Cannot have a capacity greater than ${HashMap.MAX_CAPACITY}.`
             );
         }
 
@@ -57,5 +51,47 @@ class HashMap {
 
         this.#capacity = capacity;
         this.#loadFactor = loadFactor;
+        this.#buckets = [];
+        this.#size = 0;
+
+        for (let i = 0; i < capacity; i++) {
+            this.#buckets.push(new LinkedList());
+        }
+    }
+
+    #keyToIndex(key) {
+        const keyhash = HashMap.hash(key);
+        const i = keyhash % this.#capacity;
+
+        return i;
+    }
+
+    set(key, value) {
+        const i = this.#keyToIndex(key);
+        const ll = this.#buckets[i];
+
+        ll.append(value);
+
+        const shouldGrow = this.#size >= this.#loadFactor * this.#capacity;
+        if (shouldGrow) {
+            const newNodes = this.#capacity;
+            for (let i = 0; i < newNodes; i++) {
+                this.#buckets.push(new LinkedList());
+            }
+            this.#capacity *= 2;
+        }
+    }
+
+    get(key) {
+        const i = this.#keyToIndex(key);
+        const ll = this.#buckets[i];
+
+        if (ll.size() === 0) {
+            return null;
+        }
+
+        return ll.tail().value;
     }
 }
+
+module.exports = HashMap;
