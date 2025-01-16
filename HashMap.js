@@ -1,5 +1,3 @@
-const Twister = require("./mersenne-twister.js");
-const bigintCryptoUtils = require("bigint-crypto-utils");
 const { LinkedList } = require("./linkedlist.js");
 
 class KVPair {
@@ -15,7 +13,6 @@ class HashMap {
 
     #capacity = 16;
     #loadFactor = 0.75;
-    #keys = [];
     #buckets = [];
     #size = 0;
 
