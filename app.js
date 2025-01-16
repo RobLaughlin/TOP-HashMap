@@ -72,6 +72,27 @@ function testHashMap() {
     console.log(`Keys: ${arrayToStr(hm.keys())}`);
     console.log(`Values: ${arrayToStr(hm.values())}`);
     console.log(`Entries: ${arrayToStr(hm.entries())}`);
+
+    console.log("\n\nChanging a bunch of keys again...");
+    hm.set("apple", 1);
+    hm.set("banana", 2);
+    hm.set("carrot", 3);
+    hm.set("dog", 4);
+    hm.set("elephant", 5);
+    hm.set("frog", 6);
+    hm.remove("frog");
+    hm.set("grape", 7);
+    hm.set("hat", 8);
+    hm.set("ice cream", 9);
+    hm.set("jacket", 10);
+    hm.set("kite", 11);
+    hm.set("lion", 12);
+
+    console.log(`Size of hash map: ${hm.length()}`);
+    console.log(`Capacity of hash map: ${hm.capacity}`);
+    console.log(`Keys: ${arrayToStr(hm.keys())}`);
+    console.log(`Values: ${arrayToStr(hm.values())}`);
+    console.log(`Entries: ${arrayToStr(hm.entries())}`);
 }
 
 testHashMap();
