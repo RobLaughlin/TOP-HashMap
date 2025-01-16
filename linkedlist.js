@@ -138,9 +138,8 @@ export class LinkedList {
         if (index === 0) {
             this.#head = this.#head.nextNode;
         } else if (index === this.#size - 1) {
-            if (this.#inRange(index - 2)) {
-                const newTail = this.at(index - 2);
-                this.#tail = newTail.nextNode;
+            if (this.#inRange(index - 1)) {
+                this.#tail = this.at(index - 1);
                 this.#tail.nextNode = null;
             }
         } else {

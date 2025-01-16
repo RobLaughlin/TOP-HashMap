@@ -76,13 +76,27 @@ class HashMap {
 
     #resize() {
         // Doubles the capacity and number of buckets
-        const newNodes = this.#capacity;
-        for (let i = 0; i < newNodes; i++) {
+        const entries = this.entries();
+
+        // Clear old data
+        this.clear();
+
+        // Resize
+        for (let i = 0; i < this.#capacity; i++) {
             const ll = new LinkedList();
             ll.append([]);
             this.#buckets.push(ll);
         }
         this.#capacity *= 2;
+
+        // Rehash the old entries
+        entries.forEach(([key, value]) => {
+            this.set(key, value);
+        });
+    }
+
+    get capacity() {
+        return this.#capacity;
     }
 
     set(key, value) {
@@ -162,11 +176,12 @@ class HashMap {
     }
 
     clear() {
-        for (let i = 0; i < capacity; i++) {
+        for (let i = 0; i < this.#capacity; i++) {
             const ll = new LinkedList();
             ll.append([]);
             this.#buckets[i] = ll;
         }
+        this.#size = 0;
     }
 
     keys() {
@@ -191,6 +206,25 @@ class HashMap {
         }
 
         return allValues;
+    }
+
+    entries() {
+        const allEntries = [];
+        for (let i = 0; i < this.#capacity; i++) {
+            if (this.#buckets[i].size() > 1) {
+                const keys = this.#buckets[i].head().value;
+                let j = 0;
+                let node = this.#buckets[i].at(1);
+                while (node !== null) {
+                    let key = keys[j];
+                    allEntries.push([key, node.value]);
+                    node = node.nextNode;
+                    j++;
+                }
+            }
+        }
+
+        return allEntries;
     }
 }
 
